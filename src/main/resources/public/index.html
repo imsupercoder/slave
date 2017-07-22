@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="bootstrap.css" rel="stylesheet">
+    <link href="toastr.css" rel="stylesheet">
+    <title>slave</title>
+</head>
+<body id="mainBody">
+<div class="col-md-12 col-sm-12 col-xs-12">
+    <button class="btn btn-primary" class="form-control" data-bind="click:$root.beginTask">开始任务</button>
+    <button class="btn btn-primary" class="form-control" data-bind="click:$root.getStatus">刷新状态</button>
+</div>
+<table class="table table-hover table-bordered" style="margin-left: 10px;margin-right: 10px;">
+    <thead>
+    <tr>
+        <th>批号</th>
+        <th>处理数据</th>
+        <th>总条数</th>
+        <th>已处理条数</th>
+        <th>耗时</th>
+        <th>状态</th>
+        <th>处理结果</th>
+    </tr>
+    </thead>
+    <tbody data-bind="foreach:states">
+        <tr>
+            <td data-bind="text:batchNo"></td>
+            <td data-bind="text:title"></td>
+            <td data-bind="text:total"></td>
+            <td data-bind="text:rows"></td>
+            <td data-bind="text:cost"></td>
+            <td data-bind="text:status"></td>
+            <td data-bind="text:result"></td>
+        </tr>
+    </tbody>
+</table>
+<script src="jquery.js"></script>
+<script src="bootstrap.js"></script>
+<script src="jquery.showLoading.js"></script>
+<script src="knockout.js"></script>
+<script src="toastr.min.js"></script>
+<script>
+    $.ajax({
+        url:'/cal/status',
+        type:'POST',
+        success:function(d){
+            var vm = new MyViewModel(d);
+            ko.applyBindings(vm);
+        }
+    });
+    function MyViewModel(u){
+        var self = this;
+        self.states = ko.observableArray(u);
+        self.beginTask = function(){
+            $("#mainBody").showLoading();
+            $.ajax({
+                url:'/cal/start',
+                type:'POST',
+                success:function (d) {
+                    toastr.success("任务已开始执行！");
+                },
+                error:function (d) {
+                    toastr.error("任务执行失败，请检查！");
+                },
+                complete:function (d) {
+                    self.getStatus();
+                    $("#mainBody").hideLoading();
+                }
+
+
+            })
+        };
+        self.getStatus = function(){
+            $.ajax({
+                url:'/cal/status',
+                type:'POST',
+                success:function(d){
+                    self.states(d);
+                    toastr.success("刷新成功！");
+                }
+            });
+        }
+    }
+</script>
+</body>
+</html>
